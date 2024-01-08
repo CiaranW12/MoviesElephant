@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 const { Pool } = require('pg');
-require('dotenv').config(); // Load environment variables from .env file
+require('dotenv').config();
 
 const PORT = process.env.PORT || 8000;
 const pool = new Pool({ connectionString: process.env.ELEPHANT_SQL_CONNECTION_STRING });
@@ -44,7 +44,7 @@ app.get('/api/movies/:id', (req, res) => {
 });
 
 const validateMovie = (req, res, next) => {
-  const requiredFields = ['title', 'director', 'year', 'rating', 'poster'];
+  const requiredFields = ['title', 'director', 'year', 'rating', 'poster', 'movie_details'];
   let missingFields = '';
   for (const field of requiredFields) {
     if (!req.body[field]) {
@@ -59,14 +59,15 @@ const validateMovie = (req, res, next) => {
 };
 
 app.post('/api/movies', validateMovie, (req, res, next) => {
-  const { title, director, year, rating, poster } = req.body;
+  const { title, director, year, rating, poster, movie_details } = req.body;
   pool
-    .query('INSERT INTO movies (title, director, year, rating, poster) VALUES ($1, $2, $3, $4, $5) RETURNING *;', [
+    .query('INSERT INTO movies (title, director, year, rating, poster, movie_details) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;', [
       title,
       director,
       year,
       rating,
       poster,
+      movie_details,
     ])
     .then(data => {
       res.status(201).json(data.rows[0]);
@@ -76,15 +77,16 @@ app.post('/api/movies', validateMovie, (req, res, next) => {
 
 app.put('/api/movies/:id', (req, res) => {
   const id = req.params.id;
-  const { title, director, year, rating, poster } = req.body;
+  const { title, director, year, rating, poster, movie_details } = req.body;
   pool
-    .query('UPDATE movies SET title=$1, director=$2, year=$3, rating=$4, poster=$5 WHERE id=$6 RETURNING *;', [
+    .query('UPDATE movies SET title=$1, director=$2, year=$3, rating=$4, poster=$5, movie_details=$6 WHERE id=$7 RETURNING *;', [
       title,
       director,
       year,
       rating,
       poster,
       id,
+      movie_details,
     ])
     .then(data => {
       res.json(data.rows[0]);
